@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Tooling state
+.omc/
+
+# Large generated / binary artifacts
+blackbox/recordings/
+*.pt

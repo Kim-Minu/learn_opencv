@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper Pro - Computer Use Agent Benchmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --panel-bg: #1e293b;
+      --cell-bg: #334155;
+      --cell-hover: #475569;
+      --cell-revealed: #1e293b;
+      --border-color: #475569;
+      --accent: #38bdf8;
+      --accent-danger: #f43f5e;
+      --accent-success: #10b981;
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span.badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 8px;
+      border-radius: 6px;
+      vertical-align: middle;
+    }
+
+    p.subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* Game Controls Panel */
+    .controls-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .input-group input {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      padding: 6px 10px;
+      width: 68px;
+      text-align: center;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #0369a1, #075985);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+
+    .toggle-label input {
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+
+    /* Game Board Container */
+    .game-wrapper {
+      background: var(--panel-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .status-box.mines {
+      color: var(--accent-danger);
+    }
+
+    .status-box.timer {
+      color: var(--accent);
+    }
+
+    .face-btn {
+      background: #334155;
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.2s;
+    }
+
+    .face-btn:hover {
+      background: #475569;
+      transform: scale(1.08);
+    }
+
+    /* Grid Board */
+    #grid {
+      display: grid;
+      gap: 4px;
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Cells */
+    .cell {
+      width: 46px;
+      height: 46px;
+      background: var(--cell-bg);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 800;
+      cursor: pointer;
+      position: relative;
+      border-top: 2px solid rgba(255, 255, 255, 0.15);
+      border-left: 2px solid rgba(255, 255, 255, 0.15);
+      border-right: 2px solid rgba(0, 0, 0, 0.3);
+      border-bottom: 2px solid rgba(0, 0, 0, 0.3);
+      transition: background 0.1s, transform 0.05s;
+    }
+
+    .cell:hover:not(.revealed) {
+      background: var(--cell-hover);
+    }
+
+    .cell:active:not(.revealed) {
+      transform: scale(0.95);
+    }
+
+    .cell.revealed {
+      background: var(--cell-revealed);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: default;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .cell.mine-hit {
+      background: rgba(244, 63, 94, 0.35) !important;
+      border-color: var(--accent-danger) !important;
+    }
+
+    .cell.flagged {
+      color: var(--accent-danger);
+    }
+
+    /* Number Colors */
+    .cell[data-num="1"] { color: #38bdf8; }
+    .cell[data-num="2"] { color: #34d399; }
+    .cell[data-num="3"] { color: #f87171; }
+    .cell[data-num="4"] { color: #818cf8; }
+    .cell[data-num="5"] { color: #fbbf24; }
+    .cell[data-num="6"] { color: #2dd4bf; }
+    .cell[data-num="7"] { color: #e879f9; }
+    .cell[data-num="8"] { color: #94a3b8; }
+
+    /* Visual Grid Coordinates for Computer Use Agent */
+    .cell .coord-tag {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      font-size: 8px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    body.hide-coords .coord-tag {
+      display: none;
+    }
+
+    /* Result Banner */
+    #banner {
+      width: 100%;
+      text-align: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: none;
+    }
+
+    #banner.win {
+      display: block;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--accent-success);
+      color: var(--accent-success);
+    }
+
+    #banner.lose {
+      display: block;
+      background: rgba(244, 63, 94, 0.2);
+      border: 1px solid var(--accent-danger);
+      color: var(--accent-danger);
+    }
+
+    /* Instructions & Agent Hints */
+    .agent-notes {
+      max-width: 600px;
+      margin-top: 24px;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .agent-notes code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="hide-coords">
+  <header>
+    <h1>Minesweeper Pro <span class="badge">Gemini Ready</span></h1>
+    <p class="subtitle">Computer Use Agent를 위한 고대비 &amp; 그리드 보정 지원 지뢰찾기 환경</p>
+  </header>
+
+  <!-- Control Settings -->
+  <div class="controls-panel">
+    <div class="input-group">
+      <label for="input-cols">가로(X):</label>
+      <input type="number" id="input-cols" value="8" min="4" max="24">
+    </div>
+    <div class="input-group">
+      <label for="input-rows">세로(Y):</label>
+      <input type="number" id="input-rows" value="8" min="4" max="24">
+    </div>
+    <div class="input-group">
+      <label for="input-mines">지뢰 수:</label>
+      <input type="number" id="input-mines" value="10" min="1" max="100">
+    </div>
+    <button class="btn" id="btn-apply">새 게임 생성</button>
+    <label class="toggle-label">
+      <input type="checkbox" id="check-coords">
+      <span>AI 좌표 라벨 표시</span>
+    </label>
+  </div>
+
+  <!-- Game Canvas / Board -->
+  <div class="game-wrapper">
+    <div class="status-bar">
+      <div class="status-box mines" title="남은 지뢰 수">
+        <span>💣</span>
+        <span id="mines-count">010</span>
+      </div>
+      <button class="face-btn" id="btn-reset" title="재시작">🙂</button>
+      <div class="status-box timer" title="경과 시간">
+        <span>⏱️</span>
+        <span id="timer">000</span>
+      </div>
+    </div>
+
+    <div id="banner"></div>
+
+    <div id="grid"></div>
+  </div>
+
+  <div class="agent-notes">
+    💡 <strong>Computer Use 조작 규칙:</strong><br>
+    - <strong>좌클릭 (Left Click)</strong>: 셀 열기 (첫 번째 클릭은 100% 안전 보장)<br>
+    - <strong>우클릭 (Right Click)</strong>: 깃발(🚩) 꽂기 및 해제<br>
+    - <strong>AI 좌표 라벨</strong>: 활성화 시 각 셀 우측 하단에 <code>(r, c)</code> 형태의 작은 텍스트가 표시되어 비전 모델의 정확한 클릭을 돕습니다.
+  </div>
+
+  <script>
+    // Game State
+    let cols = 8;
+    let rows = 8;
+    let totalMines = 10;
+    let board = [];
+    let isGameOver = false;
+    let isGameStarted = false;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let remainingMines = 10;
+
+    const gridEl = document.getElementById('grid');
+    const minesCountEl = document.getElementById('mines-count');
+    const timerEl = document.getElementById('timer');
+    const faceBtn = document.getElementById('btn-reset');
+    const bannerEl = document.getElementById('banner');
+    const inputCols = document.getElementById('input-cols');
+    const inputRows = document.getElementById('input-rows');
+    const inputMines = document.getElementById('input-mines');
+    const btnApply = document.getElementById('btn-apply');
+    const checkCoords = document.getElementById('check-coords');
+
+    // Toggle Coordinate labels
+    checkCoords.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.body.classList.remove('hide-coords');
+      } else {
+        document.body.classList.add('hide-coords');
+      }
+    });
+
+    btnApply.addEventListener('click', () => {
+      let c = parseInt(inputCols.value, 10);
+      let r = parseInt(inputRows.value, 10);
+      let m = parseInt(inputMines.value, 10);
+
+      if (isNaN(c) || c < 4) c = 4;
+      if (c > 24) c = 24;
+      if (isNaN(r) || r < 4) r = 4;
+      if (r > 24) r = 24;
+
+      const maxMines = Math.floor(c * r * 0.85);
+      if (isNaN(m) || m < 1) m = 1;
+      if (m > maxMines) m = maxMines;
+
+      cols = c;
+      rows = r;
+      totalMines = m;
+
+      inputCols.value = cols;
+      inputRows.value = rows;
+      inputMines.value = totalMines;
+
+      initGame();
+    });
+
+    faceBtn.addEventListener('click', initGame);
+
+    function initGame() {
+      // Clear timer
+      clearInterval(timerInterval);
+      timerInterval = null;
+      secondsElapsed = 0;
+      timerEl.textContent = '000';
+
+      isGameOver = false;
+      isGameStarted = false;
+      remainingMines = totalMines;
+      updateMinesDisplay();
+      faceBtn.textContent = '🙂';
+      bannerEl.className = '';
+      bannerEl.textContent = '';
+
+      // Set Grid CSS columns
+      gridEl.style.gridTemplateColumns = `repeat(${cols}, 46px)`;
+      gridEl.innerHTML = '';
+
+      // Initialize Empty Board Matrix
+      board = [];
+      for (let r = 0; r < rows; r++) {
+        board[r] = [];
+        for (let c = 0; c < cols; c++) {
+          board[r][c] = {
+            r, c,
+            isMine: false,
+            isRevealed: false,
+            isFlagged: false,
+            neighborMines: 0,
+            el: null
+          };
+
+          const cellEl = document.createElement('div');
+          cellEl.className = 'cell';
+          cellEl.id = `cell-${r}-${c}`;
+          cellEl.dataset.row = r;
+          cellEl.dataset.col = c;
+
+          // Coordinate label for Computer Use Agent
+          const coordEl = document.createElement('span');
+          coordEl.className = 'coord-tag';
+          coordEl.textContent = `${r},${c}`;
+          cellEl.appendChild(coordEl);
+
+          // Event Listeners
+          cellEl.addEventListener('click', () => handleCellClick(r, c));
+          cellEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            handleCellRightClick(r, c);
+          });
+
+          gridEl.appendChild(cellEl);
+          board[r][c].el = cellEl;
+        }
+      }
+    }
+
+    // Place mines AFTER first click to guarantee safety
+    function placeMines(firstR, firstC) {
+      let placed = 0;
+      while (placed < totalMines) {
+        const randR = Math.floor(Math.random() * rows);
+        const randC = Math.floor(Math.random() * cols);
+
+        // Don't place on first clicked cell or its immediate neighbors
+        const isNearFirstClick = Math.abs(randR - firstR) <= 1 && Math.abs(randC - firstC) <= 1;
+        if (!board[randR][randC].isMine && !isNearFirstClick) {
+          board[randR][randC].isMine = true;
+          placed++;
+        }
+      }
+
+      // If board is very small and couldn't avoid neighbors, fallback to just avoiding exact cell
+      if (placed < totalMines) {
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (placed >= totalMines) break;
+            if (!board[r][c].isMine && !(r === firstR && c === firstC)) {
+              board[r][c].isMine = true;
+              placed++;
+            }
+          }
+        }
+      }
+
+      // Calculate neighbor counts
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (board[r][c].isMine) continue;
+          let count = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const nr = r + dr;
+              const nc = c + dc;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                if (board[nr][nc].isMine) count++;
+              }
+            }
+          }
+          board[r][c].neighborMines = count;
+        }
+      }
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        if (secondsElapsed > 999) secondsElapsed = 999;
+        timerEl.textContent = String(secondsElapsed).padStart(3, '0');
+      }, 1000);
+    }
+
+    function handleCellClick(r, c) {
+      if (isGameOver) return;
+      const cell = board[r][c];
+      if (cell.isRevealed || cell.isFlagged) return;
+
+      if (!isGameStarted) {
+        isGameStarted = true;
+        placeMines(r, c);
+        startTimer();
+      }
+
+      if (cell.isMine) {
+        // Game Over - Boom
+        triggerGameOver(cell);
+        return;
+      }
+
+      revealCell(r, c);
+      checkWinCondition();
+    }
+
+    function revealCell(r, c) {
+      const cell = board[r][c];
+      if (cell.isRevealed || cell.isFlagged) return;
+
+      cell.isRevealed = true;
+      cell.el.classList.add('revealed');
+
+      if (cell.neighborMines > 0) {
+        cell.el.textContent = cell.neighborMines;
+        cell.el.dataset.num = cell.neighborMines;
+
+        // Re-append coord tag if coords enabled
+        const coordEl = document.createElement('span');
+        coordEl.className = 'coord-tag';
+        coordEl.textContent = `${r},${c}`;
+        cell.el.appendChild(coordEl);
+      } else {
+        // Flood Fill reveal for 0 neighbor mines
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+              if (!board[nr][nc].isRevealed && !board[nr][nc].isMine) {
+                revealCell(nr, nc);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function handleCellRightClick(r, c) {
+      if (isGameOver) return;
+      const cell = board[r][c];
+      if (cell.isRevealed) return;
+
+      cell.isFlagged = !cell.isFlagged;
+      if (cell.isFlagged) {
+        cell.el.classList.add('flagged');
+        cell.el.textContent = '🚩';
+        remainingMines--;
+      } else {
+        cell.el.classList.remove('flagged');
+        cell.el.textContent = '';
+        remainingMines++;
+      }
+
+      // Re-append coord tag
+      const coordEl = document.createElement('span');
+      coordEl.className = 'coord-tag';
+      coordEl.textContent = `${r},${c}`;
+      cell.el.appendChild(coordEl);
+
+      updateMinesDisplay();
+    }
+
+    function updateMinesDisplay() {
+      const displayVal = Math.max(remainingMines, -99);
+      const sign = displayVal < 0 ? '-' : '';
+      minesCountEl.textContent = sign + String(Math.abs(displayVal)).padStart(3, '0');
+    }
+
+    function triggerGameOver(hitCell) {
+      isGameOver = true;
+      clearInterval(timerInterval);
+      faceBtn.textContent = '😵';
+
+      bannerEl.className = 'lose';
+      bannerEl.textContent = '💥 지뢰를 밟았습니다! 게임 오버';
+
+      // Reveal all mines
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = board[r][c];
+          if (cell.isMine) {
+            cell.el.classList.add('revealed');
+            cell.el.textContent = '💣';
+          }
+        }
+      }
+      hitCell.el.classList.add('mine-hit');
+    }
+
+    function checkWinCondition() {
+      let unrevealedSafeCells = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (!board[r][c].isMine && !board[r][c].isRevealed) {
+            unrevealedSafeCells++;
+          }
+        }
+      }
+
+      if (unrevealedSafeCells === 0) {
+        // Victory!
+        isGameOver = true;
+        clearInterval(timerInterval);
+        faceBtn.textContent = '😎';
+        bannerEl.className = 'win';
+        bannerEl.textContent = '🎉 축하합니다! 모든 안전한 칸을 찾아 승리했습니다!';
+
+        // Flag remaining mines
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (board[r][c].isMine && !board[r][c].isFlagged) {
+              board[r][c].el.textContent = '🚩';
+              board[r][c].el.classList.add('flagged');
+            }
+          }
+        }
+        remainingMines = 0;
+        updateMinesDisplay();
+      }
+    }
+
+    // Start default 8x8 game
+    initGame();
+  </script>
+</body>
+</html>
